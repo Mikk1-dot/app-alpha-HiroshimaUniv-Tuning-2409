@@ -138,7 +138,7 @@ export default async function dispatchTowTruck() {
       fail();
     }
 
-    sleep(2); // 画像の読み込みのため3秒間待機
+    //sleep(2); // 画像の読み込みのため3秒間待機
     await countCompletedImage(page);
 
     // リクエスト詳細画面へ移動
