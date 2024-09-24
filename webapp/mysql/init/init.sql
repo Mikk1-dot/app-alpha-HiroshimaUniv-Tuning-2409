@@ -9,27 +9,37 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL DEFAULT '$argon2id$v=19$m=19456,t=2,p=1$XATPp8QqqTtg3VrdJ/QPfw$r3o9L6zWQc/Zq70GbP33Gl9N50jGUSMMvYcl7M05ukw',
     profile_image VARCHAR(255) NOT NULL DEFAULT 'default.png',
-    role VARCHAR(255) NOT NULL
+    role VARCHAR(255) NOT NULL, 
+INDEX idx_username(username)  -- 为 username 字段添加索引
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     session_token VARCHAR(255) NOT NULL,
-    is_valid BOOLEAN NOT NULL DEFAULT TRUE
+    is_valid BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- 指定 user_id 为外键
+INDEX idx_user_id_session(user_id, session_token),
+    UNIQUE INDEX unique_session_token(session_token)  -- 为 session_token 创建唯一索引
 );
 
 CREATE TABLE IF NOT EXISTS dispatchers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    area_id INT NOT NULL
+    area_id INT NOT NULL,
+UNIQUE INDEX unique_user_id(user_id),  -- 为 user_id 创建唯一索引
+    FOREIGN KEY (user_id) REFERENCES users(id)  -- 指定 user_id 为外键
 );
 
 CREATE TABLE IF NOT EXISTS tow_trucks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     driver_id INT NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'available',
-    area_id INT NOT NULL
+    area_id INT NOT NULL,
+-- 索引
+FOREIGN KEY (driver_id) REFERENCES users(id),
+INDEX idx_status_area_id(status, area_id)
+
 );
 
 CREATE TABLE IF NOT EXISTS nodes (
@@ -37,7 +47,9 @@ CREATE TABLE IF NOT EXISTS nodes (
     name VARCHAR(255) NOT NULL,
     area_id INT NOT NULL,
     x INT NOT NULL,
-    y INT NOT NULL
+    y INT NOT NULL,
+    -- 创建组合索引 (area_id, id) 加速 WHERE 和 ORDER BY
+    UNIQUE INDEX idx_nodes_area_id_id(area_id, id)
 );
 
 CREATE TABLE IF NOT EXISTS edges (
@@ -52,7 +64,12 @@ CREATE TABLE IF NOT EXISTS locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     tow_truck_id INT NOT NULL,
     node_id INT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+-- 索引
+FOREIGN KEY (tow_truck_id) REFERENCES tow_trucks(id), 
+INDEX idx_tow_truck_timestamp (tow_truck_id, timestamp)
+
 );
 
 CREATE TABLE IF NOT EXISTS orders (
